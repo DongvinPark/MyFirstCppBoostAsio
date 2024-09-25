@@ -6,7 +6,7 @@ using boost::asio::ip::tcp;
 int main() {
     try {
         boost::asio::io_service io_service;
-        tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), 8080));
+        tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), 8554));
 
         std::cout << "Server is running on port 8080..." << std::endl;
 
