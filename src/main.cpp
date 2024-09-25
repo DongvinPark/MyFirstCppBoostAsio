@@ -8,11 +8,12 @@ int main() {
         boost::asio::io_service io_service;
         tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), 8554));
 
-        std::cout << "Server is running on port 8080..." << std::endl;
+        std::cout << "Server is running on port 8554..." << std::endl;
 
         while (true) {
             tcp::socket socket(io_service);
             acceptor.accept(socket);
+	    std::cout << "client socket connected!!\n";
             std::string message = "Hello from Boost.Asio server!";
             boost::system::error_code ignored_error;
             boost::asio::write(socket, boost::asio::buffer(message), ignored_error);
