@@ -13,10 +13,11 @@ int main() {
         while (true) {
             tcp::socket socket(io_service);
             acceptor.accept(socket);
-	    std::cout << "client socket connected!!\n";
-            std::string message = "Hello from Boost.Asio server!";
+	        std::cout << "client socket connected!!\n";
+            std::string message = "Hello from Boost.Asio server!\n";
             boost::system::error_code ignored_error;
             boost::asio::write(socket, boost::asio::buffer(message), ignored_error);
+            std::cout << "wrote response!!\n";
         }
     } catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << std::endl;
