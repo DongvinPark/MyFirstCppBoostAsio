@@ -1,25 +1,14 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.29)
+project(MyBoostAsioProject)
 
-# Project name and version
-project(MyBoostAsioProject VERSION 1.0)
+set(CMAKE_CXX_STANDARD 20)
 
-# Specify the C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# Add Vcpkg toolchain file if using Vcpkg
+set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 
-# Find the Boost library
 find_package(Boost REQUIRED COMPONENTS system)
 
-# Include the directories for header files
-include_directories(${Boost_INCLUDE_DIRS} include src)
+add_executable(MyBoostAsioProject src/main.cpp "src/dto/res_second.cpp")
 
-# Collect all source files from subdirectories
-file(GLOB_RECURSE SOURCES
-    src/main.cpp
-)
-
-# Create the executable
-add_executable(MyBoostAsioProject ${SOURCES})
-
-# Link Boost libraries to the project
-target_link_libraries(MyBoostAsioProject ${Boost_LIBRARIES})
+# Link Boost.System and Winsock (ws2_32)
+target_link_libraries(MyBoostAsioProject Boost::system ws2_32)
