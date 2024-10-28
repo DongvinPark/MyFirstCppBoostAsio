@@ -1,7 +1,7 @@
 #include <boost/asio.hpp>
 #include <iostream>
 
-#include "dto/res_second.cpp"
+#include "dto/Res.cpp"
 
 using boost::asio::ip::tcp;
 
@@ -17,7 +17,7 @@ int main() {
             acceptor.accept(socket);
 	        std::cout << "client socket connected!!\n";
 
-            ResSecond resObject{ 9, "DongvinPark" };
+            Res resObject{ 9, "DongvinPark" };
             std::string message = "Server sent Object to Client >> key : "
             + std::to_string(resObject.getKey())
             + ", val : " + resObject.getVal() + "\n";
