@@ -74,7 +74,7 @@ File > setting > Build, Execution, Deployment > CMake
 vcpkg 깃허브 리포지토리를 정확하게 C 드라이브 최상위 디렉토리에다가 클론한 상태여야 한다. 중요한 것은, -DCMAKE_TOOLCHAIN_FILE이 필요로 하는 값이 vcpkg.cmake 라는 파일이 실제로 위치하는 디렉토리 경로여야 한다는 점이다.
 <br><br>
 
-## Linux & MacOS(M series chip) 실행방법
+## Linux & MacOS(M series chip) CLion 실행방법
 1. Linux OS가 설치된 AWS EC2 또는 Ubuntu 가 설치된 실제 컴퓨터를 준비한다.
 2. 현재 깃허브 리포지토리를 준비된 머신에 클론한다.
 3. 준비된 머신에 GCC, G++, CMake, Boost.Asio를 설치한다. Mac이라면 homebrew를 사용한다.
@@ -110,3 +110,44 @@ target_link_libraries(MyBoostAsioProject ${Boost_LIBRARIES})
 5. 리눅스 환경이라면, build_and_run_on_linux로 시작하는 .sh 파일에 'chmod +x .sh 파일명' 명령어로 실행권한을 준 다음, 실행하면 된다.<br>
 6. MacOS 환경이라면, 프로젝트 root 디렉토리 내에 build 디렉토리를 만든 다음, 그 디렉토리로 이동해서 'cmake ..', 'make' 명령어를 순서대로 실행하여 실행파일을 만든다. 그 후 실행파일을 './실행파일이름' 명령어로 수동으로 실행하면 된다.<br>
 7. Linux 또는 MacOS 환경에서 JetBrains CLion IDE를 사용하고, 3번 단계에서 언급한 툴들이 전부 설치돼 있다면 현재 프로젝트를 IDE로 열고 4.에서 설명한 대로 CMakeLists.txt를 변경한 다음 실행시키면 된다.
+<br><br>
+
+## MacOS(M series chip) Xcode 실행방법
+1. mac에 Xcode, GCC, G++, CMake를 설치해준다. homebrew가 없다면 설치해준다. boost 라이브러리는 homebrew를 이용해서 설치해준다.
+2. 본 프로젝트를 깃 클론한다.
+3. 본 프로젝트 내의 CMakeLists.txt를 아래의 내용으로 통째로 교체한다.
+```CMake
+cmake_minimum_required(VERSION 3.10)
+
+# Project name and version
+project(MyBoostAsioProject VERSION 1.0)
+
+# Specify the C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Find the Boost library
+find_package(Boost REQUIRED COMPONENTS system)
+
+# Include the directories for header files
+include_directories(${Boost_INCLUDE_DIRS} include src)
+
+# Collect all source files from subdirectories
+file(GLOB_RECURSE SOURCES
+    src/main.cpp
+    src/dto/Res.cpp
+)
+
+# Create the executable
+add_executable(MyBoostAsioProject ${SOURCES})
+
+# Link Boost libraries to the project
+target_link_libraries(MyBoostAsioProject ${Boost_LIBRARIES})
+```
+4. 깃 클론 완료한 본 프로젝트의 root 디렉토리로 이동해서 아래의 명령어를 실행한다. 그러면 본 프로젝트를 바탕으로 XcodeProject라는 폴더가 만들어진다.
+```text
+cmake -G Xcode -B XcodeProject
+```
+5. XcodeProject 폴더에 들어가서 MyBoostAsioProject.xcodeproj라는 Xcode 프로젝트 파일을 실행한다. 그러면 Xcode IDE가 열린다.
+6. Xcode 최상단 메뉴에서 Product >> Scheme >> Edit Scheme에 진입한 후, 왼쪽의 Run 탭에서 Executable 메뉴에서 MyBoostAsioProject라는 본 프로젝트를 선택한 후 close 한다.
+7. 그 후, IDE 왼쪽 상단의 'Run' 버튼(재생버튼 모양으로 생김)을 눌러서 실행한다.
