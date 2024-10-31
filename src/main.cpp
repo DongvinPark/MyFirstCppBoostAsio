@@ -1,7 +1,7 @@
 #include <boost/asio.hpp>
 #include <iostream>
 
-#include "dto/Res.cpp"
+#include "dto/Res.h"
 
 using boost::asio::ip::tcp;
 

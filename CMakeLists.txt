@@ -10,7 +10,11 @@ set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRIN
 
 find_package(Boost REQUIRED COMPONENTS system)
 
-add_executable(MyBoostAsioProject src/main.cpp "src/dto/Res.cpp")
+add_executable(
+	MyBoostAsioProject src/main.cpp
+	"src/dto/Res.h"
+	"src/dto/Res.cc"
+)
 
 # Link Boost.System and Winsock (ws2_32)
 target_link_libraries(MyBoostAsioProject Boost::system ws2_32)
