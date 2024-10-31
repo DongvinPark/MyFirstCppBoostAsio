@@ -135,7 +135,8 @@ include_directories(${Boost_INCLUDE_DIRS} include src)
 # Collect all source files from subdirectories
 file(GLOB_RECURSE SOURCES
     src/main.cpp
-    src/dto/Res.cpp
+    src/dto/Res.h
+    src/dto/Res.cc
 )
 
 # Create the executable
