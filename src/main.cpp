@@ -1,36 +1,30 @@
-#include <boost/asio.hpp>
+#include <boost/lockfree/queue.hpp>
 #include <iostream>
+#include <thread>
+#include <vector>
 
-#include "dto/Res.h"
+boost::lockfree::queue<int> queue(100);  // Capacity: 100
 
-using boost::asio::ip::tcp;
+void producer() {
+  for (int i = 1; i <= 10; ++i) {
+    while (!queue.push(i)) {}  // Keep trying until successful
+    std::cout << "Produced: " << i << std::endl;
+  }
+}
+
+void consumer() {
+  int value;
+  while (true) {
+    while (queue.pop(value)) {  // Try to pop elements
+      std::cout << "Consumed: " << value << std::endl;
+    }
+  }
+}
 
 int main() {
-    try {
-        boost::asio::io_service io_service;
-        tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), 8554));
+  std::thread t1(producer);
+  std::thread t2(consumer);
 
-        std::cout << "Server is running on port 8554..." << std::endl;
-
-        while (true) {
-            tcp::socket socket(io_service);
-            acceptor.accept(socket);
-	        std::cout << "client socket connected!!\n";
-
-            Res resObject{ 9, "DongvinPark" };
-            std::string message = "Server sent Object to Client >> key : "
-            + std::to_string(resObject.getKey())
-            + ", val : " + resObject.getVal() + "\n";
-
-            std::cout << "sent message : " << message << "\n";
-
-            boost::system::error_code ignored_error;
-            boost::asio::write(socket, boost::asio::buffer(message), ignored_error);
-            std::cout << "wrote response!!\n";
-        }
-    } catch (std::exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
-    }
-
-    return 0;
+  t1.join();
+  t2.join();
 }
