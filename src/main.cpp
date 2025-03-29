@@ -1,30 +1,108 @@
+#include <array>
 #include <boost/lockfree/queue.hpp>
+#include <boost/pool/object_pool.hpp>
 #include <iostream>
+#include <memory>
 #include <thread>
-#include <vector>
+#include <chrono>
 
-boost::lockfree::queue<int> queue(100);  // Capacity: 100
+struct Data {
+  std::array<unsigned char, 3 * 1024 * 1024> buf;
+  int refCount;
 
-void producer() {
-  for (int i = 1; i <= 10; ++i) {
-    while (!queue.push(i)) {}  // Keep trying until successful
-    std::cout << "Produced: " << i << std::endl;
-  }
-}
-
-void consumer() {
-  int value;
-  while (true) {
-    while (queue.pop(value)) {  // Try to pop elements
-      std::cout << "Consumed: " << value << std::endl;
+  Data() {
+    // Fill buffer with dummy data
+    std::array<unsigned char, 10> charArr{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    for (int i = 0; i < 10000; ++i) {
+      buf[i] = charArr[i % 10];
     }
+    refCount = 0;
+    std::cout << "!!! Data (buf) allocated !!!\n";
   }
-}
+
+  ~Data() {
+    std::cout << "!!! Data (buf) destructed !!!\n";
+  }
+};
+
+struct RtpPacketInfo {
+  int flag;  // 0 for video, 1 for audio
+  std::weak_ptr<Data> buf;
+  size_t offset;
+  size_t length;
+  bool isHybridMeta;
+
+  RtpPacketInfo() {
+    std::cout << "!!! RtpPacketInfo constructed !!!\n";
+  }
+
+  ~RtpPacketInfo() {
+    std::cout << "!!! Destructor called !!!\n";
+  }
+};
+
+// Lock-free queue with a capacity of 1000
+boost::lockfree::queue<RtpPacketInfo*> queue(1000);
 
 int main() {
-  std::thread t1(producer);
-  std::thread t2(consumer);
+  boost::object_pool<RtpPacketInfo> rtpPacketPool{1};
+
+  auto videoSamplePtr = std::make_shared<Data>();
+  std::cout << "Shared ptr use_count before producer: " << videoSamplePtr.use_count() << std::endl;
+
+  // Producer thread
+  std::thread t1([&]() {
+    for (int i = 0; i < 100; ++i) {
+      rtpPacketPool.set_next_size(1);
+      auto rtp = rtpPacketPool.construct();  // Dynamically allocate memory
+      rtp->flag = 1;
+      rtp->offset = i * 11;
+      rtp->length = 1024;
+      rtp->isHybridMeta = false;
+      rtp->buf = videoSamplePtr;  // Assign shared buffer to weak_ptr
+
+      videoSamplePtr->refCount++;
+
+      while (!queue.push(rtp)) {  // Ensure the item is pushed
+        std::this_thread::yield();  // Give CPU time to consumer
+      }
+    }
+    std::cout << "Producer done." << std::endl;
+  });
+
+  // Consumer thread
+  std::thread t2([&]() {
+    int popCount = 0;
+    RtpPacketInfo* packetInfoPtr = nullptr;
+
+    while (popCount < 100) {  // Ensure we consume all 100 packets
+      if (queue.pop(packetInfoPtr)) {
+        std::cout << "!!! Popped RTP packet with offset: " << packetInfoPtr->offset << " !!!\n";
+
+        // Try to access the buffer safely
+        if (auto sharedBuf = packetInfoPtr->buf.lock()) {
+          std::cout << "Buffer[0]: " << static_cast<char>(sharedBuf->buf[packetInfoPtr->offset]) << "\n";
+        } else {
+          std::cout << "Buffer expired!\n";
+        }
+        ++popCount;
+        rtpPacketPool.destroy(packetInfoPtr);
+        videoSamplePtr->refCount--;
+      } else {
+        std::this_thread::yield();  // Give CPU time to producer
+      }
+    }
+    std::cout << "Consumer done.\n";
+  });
 
   t1.join();
   t2.join();
+
+  if (videoSamplePtr->refCount == 0) {
+    std::cout << "Shared ptr use_count after consumer: " << videoSamplePtr.use_count() << std::endl;
+    videoSamplePtr.reset();  // Manually reset to trigger destructor
+    std::cout << "Shared ptr reset. Exiting main." << std::endl;
+  }
+
+  return 0;
 }
