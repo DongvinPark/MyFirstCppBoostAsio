@@ -5,19 +5,22 @@
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 
 struct Data {
   std::array<unsigned char, 3 * 1024 * 1024> buf;
   int refCount;
 
-  Data() {
+  Data(std::ifstream& videoAccess) {
     // Fill buffer with dummy data
-    std::array<unsigned char, 10> charArr{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-    for (int i = 0; i < 10000; ++i) {
-      buf[i] = charArr[i % 10];
+    if (videoAccess.read(reinterpret_cast<std::ifstream::char_type *>(buf.data()),10000)) {
+      refCount = 0;
+      std::cout << "!!! Data (buf) allocated !!!\n";
+    } else {
+      refCount = -1;
+      std::cout << "!!! Data (buf) not allocated !!!\n";
     }
-    refCount = 0;
-    std::cout << "!!! Data (buf) allocated !!!\n";
   }
 
   ~Data() {
@@ -47,7 +50,11 @@ boost::lockfree::queue<RtpPacketInfo*> queue(1000);
 int main() {
   boost::object_pool<RtpPacketInfo> rtpPacketPool{1};
 
-  auto videoSamplePtr = std::make_shared<Data>();
+  const std::string enhypen1camRefVPath = "C:\\Users\\user\\CLionProjects\\CppTestPad\\V1H.asv";
+  std::ifstream videoFileStream(enhypen1camRefVPath, std::ios::binary | std::ios::ate);
+  videoFileStream.seekg(0, std::ios::beg);
+
+  auto videoSamplePtr = std::make_shared<Data>(videoFileStream);
   std::cout << "Shared ptr use_count before producer: " << videoSamplePtr.use_count() << std::endl;
 
   // Producer thread
