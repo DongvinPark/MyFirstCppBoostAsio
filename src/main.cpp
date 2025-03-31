@@ -9,11 +9,12 @@
 #include <fstream>
 
 struct Data {
-  std::array<unsigned char, 3 * 1024 * 1024> buf;
+  std::vector<unsigned char> buf;
   int refCount;
 
-  Data(std::ifstream& videoAccess) {
+  Data(std::ifstream& videoAccess, const int sampleLen) {
     // Fill buffer with dummy data
+    buf.resize(sampleLen);
     if (videoAccess.read(reinterpret_cast<std::ifstream::char_type *>(buf.data()),10000)) {
       refCount = 0;
       std::cout << "!!! Data (buf) allocated !!!\n";
@@ -30,7 +31,7 @@ struct Data {
 
 struct RtpPacketInfo {
   int flag;  // 0 for video, 1 for audio
-  std::weak_ptr<Data> buf;
+  std::shared_ptr<Data> bufPtr;
   size_t offset;
   size_t length;
   bool isHybridMeta;
@@ -60,7 +61,7 @@ int main() {
   std::ifstream videoFileStream(enhypen1camRefVPath, std::ios::binary | std::ios::ate);
   videoFileStream.seekg(0, std::ios::beg);
 
-  auto videoSamplePtr = std::make_shared<Data>(videoFileStream);
+  auto videoSamplePtr = std::make_shared<Data>(videoFileStream, 10000);
   std::cout << "Shared ptr use_count before producer: " << videoSamplePtr.use_count() << std::endl;
 
   // Producer thread
@@ -72,7 +73,7 @@ int main() {
       rtp->offset = i * 11;
       rtp->length = 1024;
       rtp->isHybridMeta = false;
-      rtp->buf = videoSamplePtr;  // Assign shared buffer to weak_ptr
+      rtp->bufPtr = videoSamplePtr;  // Assign shared buffer
 
       videoSamplePtr->refCount++;
 
@@ -92,14 +93,10 @@ int main() {
       if (queue.pop(packetInfoPtr)) {
         std::cout << "!!! Popped RTP packet with offset: " << packetInfoPtr->offset << " !!!\n";
 
-        // Try to access the buffer safely
-        if (auto sharedBuf = packetInfoPtr->buf.lock()) {
-          std::cout << "Buffer[0]: " << static_cast<char>(sharedBuf->buf[packetInfoPtr->offset]) << "\n";
-        } else {
-          std::cout << "Buffer expired!\n";
-        }
+        std::cout << "Buffer["<< packetInfoPtr->offset <<"]: "
+          << static_cast<char>(packetInfoPtr->bufPtr->buf[packetInfoPtr->offset]) << "\n";
         ++popCount;
-        rtpPacketPool.destroy(packetInfoPtr);
+        rtpPacketPool.free(packetInfoPtr);
         videoSamplePtr->refCount--;
       } else {
         std::this_thread::yield();  // Give CPU time to producer
