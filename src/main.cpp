@@ -54,7 +54,8 @@ int main() {
   //const std::string enhypen1camRefVPath = "C:\\Users\\user\\CLionProjects\\CppTestPad\\V1H.asv";
 
   // for mac
-  const std::string enhypen1camRefVPath = "/Users/dongvin99/Documents/for Mac Studio Dev Contents BackUP/streaming_contents_3.0/enhypen-test-1cam-H";
+  const std::string enhypen1camRefVPath
+  = "/Users/dongvin99/Documents/for Mac Studio Dev Contents BackUP/streaming_contents_3.0/enhypen-test-1cam-H/cam0/V1H.asv";
 
   std::ifstream videoFileStream(enhypen1camRefVPath, std::ios::binary | std::ios::ate);
   videoFileStream.seekg(0, std::ios::beg);
