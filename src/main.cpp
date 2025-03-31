@@ -50,7 +50,12 @@ boost::lockfree::queue<RtpPacketInfo*> queue(1000);
 int main() {
   boost::object_pool<RtpPacketInfo> rtpPacketPool{1};
 
-  const std::string enhypen1camRefVPath = "C:\\Users\\user\\CLionProjects\\CppTestPad\\V1H.asv";
+  // for window
+  //const std::string enhypen1camRefVPath = "C:\\Users\\user\\CLionProjects\\CppTestPad\\V1H.asv";
+
+  // for mac
+  const std::string enhypen1camRefVPath = "/Users/dongvin99/Documents/for Mac Studio Dev Contents BackUP/streaming_contents_3.0/enhypen-test-1cam-H";
+
   std::ifstream videoFileStream(enhypen1camRefVPath, std::ios::binary | std::ios::ate);
   videoFileStream.seekg(0, std::ios::beg);
 

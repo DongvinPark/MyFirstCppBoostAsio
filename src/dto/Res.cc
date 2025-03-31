@@ -1,4 +1,4 @@
-#include "res.h"
+#include "../dto/Res.h"
 
 Res::Res(int k, const std::string& v) : key{ k }, val{ v } {}
 
