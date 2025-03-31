@@ -6,12 +6,13 @@
 
 class Data {
 public:
-    std::array<unsigned char, 3 * 1024 * 1024> buf{};
+    std::vector<unsigned char> buf;
     // {offset, length} pair vector
     std::vector<std::pair<long, long>> meta;
 
-    explicit Data(std::ifstream &videoAccess) {
-        if (videoAccess.read(reinterpret_cast<char *>(buf.data()), 10000)) {
+    explicit Data(std::ifstream &videoAccess, const int sampleLen) {
+        buf.resize(sampleLen);
+        if (videoAccess.read(reinterpret_cast<char *>(buf.data()), sampleLen)) {
             for (int i = 0; i < 10; ++i){
                 meta.emplace_back(i,i*100);
             }
@@ -42,7 +43,7 @@ int main() {
 
     videoFile.seekg(0, std::ios::beg);
 
-    std::shared_ptr<Data> dataPtr = std::make_shared<Data>(videoFile);
+    std::shared_ptr<Data> dataPtr = std::make_shared<Data>(videoFile, 10000);
     if (!dataQueue.push(dataPtr)) {
         std::cerr << "Queue push failed!\n";
     }
