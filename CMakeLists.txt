@@ -1,20 +1,47 @@
-# 현재의 CMakeLists.txt의 내용은  WindowOS Visual Stuido IDE용이다.
-# Linux와 M Series Chip MacOS를 위한 CMakeLists.txt는 README.md에 기재돼 있다.
-cmake_minimum_required(VERSION 3.29)
-project(MyBoostAsioProject)
+cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 20)
+# Project name and version
+project(MyBoostAsioProject VERSION 1.0)
 
-# Add Vcpkg toolchain file if using Vcpkg
-set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+# Set C++ standard to 17.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
-find_package(Boost REQUIRED COMPONENTS system)
+# Add platform-specific settings
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+	# Set toolchain for vcpkg (Windows only)
+	set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+
+	# Find Boost using vcpkg
+	find_package(Boost REQUIRED COMPONENTS system)
+
+	# Additional libraries required on Windows
+	set(PLATFORM_LIBS ws2_32)
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	# Find Boost using Homebrew (macOS only)
+	find_package(Boost REQUIRED)
+
+	# No additional libraries required for macOS
+	set(PLATFORM_LIBS "")
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# Find Boost
+	find_package(Boost REQUIRED)
+
+	# Link pthread library for Linux
+	set(PLATFORM_LIBS pthread)
+endif()
+
+# Include directories
+include_directories(${Boost_INCLUDE_DIRS} src)
 
 add_executable(
-	MyBoostAsioProject src/main.cpp
-	"src/dto/Res.h"
-	"src/dto/Res.cc"
+		MyBoostAsioProject src/main.cpp
+		"src/dto/Res.h"
+		"src/dto/Res.cc"
 )
 
-# Link Boost.System and Winsock (ws2_32)
-target_link_libraries(MyBoostAsioProject Boost::system ws2_32)
+# Link Boost libraries and platform-specific libraries
+target_link_libraries(MyBoostAsioProject ${Boost_LIBRARIES} ${PLATFORM_LIBS})
