@@ -97,6 +97,7 @@ int main() {
           << static_cast<char>(packetInfoPtr->bufPtr->buf[packetInfoPtr->offset]) << "\n";
         ++popCount;
         rtpPacketPool.free(packetInfoPtr);
+        packetInfoPtr->bufPtr.reset();
         videoSamplePtr->refCount--;
       } else {
         std::this_thread::yield();  // Give CPU time to producer
